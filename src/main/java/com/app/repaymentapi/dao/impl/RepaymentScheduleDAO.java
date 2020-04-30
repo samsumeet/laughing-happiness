@@ -25,6 +25,7 @@ import com.app.repaymentapi.utility.UtilityHelper;
 @Component
 public class RepaymentScheduleDAO implements IRepaymentScheduleDAO {
 	private DateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	private Calendar calendar = Calendar.getInstance();
 
 	@Override
 	public List<RepaymentScheduleResponse> fetchRepaymentSchedule(RepaymentScheduleEntity repaymentScheduleEntity) {
@@ -35,13 +36,14 @@ public class RepaymentScheduleDAO implements IRepaymentScheduleDAO {
 		double actualLoanAmount;
 		double nomnialRate;
 
-		Calendar cal = Calendar.getInstance();
 		try {
 			actualLoanAmount = Double.valueOf(repaymentScheduleEntity.getLoanAmount());
 			nomnialRate = Double.valueOf(repaymentScheduleEntity.getNominalRate());
 
-			cal.setTime(dateformat.parse(repaymentScheduleEntity.getStartDate()));
-			cal.add(Calendar.DAY_OF_MONTH, 1);
+			calendar.setTime(dateformat.parse(repaymentScheduleEntity.getStartDate()));
+			calendar.set(Calendar.HOUR, 0);
+			calendar.set(Calendar.MINUTE, 0);
+			calendar.set(Calendar.SECOND, 0);
 		} catch (ParseException | NumberFormatException e) {
 			// we can use logging here for any failure
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ErrorMessage.INVALID_INPUT, e);
@@ -74,7 +76,7 @@ public class RepaymentScheduleDAO implements IRepaymentScheduleDAO {
 			// Borrower Payment Amount (Annuity) = Principal + Interest
 			repaymentScheduleResponse.setBorrowerPaymentAmount(UtilityHelper.convertToNdigitDecimal(annunityAmount));
 			repaymentScheduleResponse.setInitialOutstandingPrincipal(String.valueOf(loanAmount));
-			repaymentScheduleResponse.setDate(cal.toInstant().toString());
+			repaymentScheduleResponse.setDate(dateformat.format(calendar.getTime()));
 
 			repaymentScheduleResponse
 					.setRemainingOutstandingPrincipal(UtilityHelper.convertToNdigitDecimal(loanAmount - principal));
@@ -83,7 +85,7 @@ public class RepaymentScheduleDAO implements IRepaymentScheduleDAO {
 			repaymentScheduleEntity.setLoanAmount(repaymentScheduleResponse.getRemainingOutstandingPrincipal());
 
 			list.add(repaymentScheduleResponse);
-			cal.add(Calendar.MONTH, 1);
+			calendar.add(Calendar.MONTH, 1);
 
 		}
 
